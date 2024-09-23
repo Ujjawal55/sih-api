@@ -5,24 +5,54 @@ from opd.models import Doctor, Address
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
-        fields = "__all__"
         exclude = [
-            "doctor",
+            "created_at",
         ]
 
 
-class DoctorSerializer(serializers.ModelSerializer):
-    address = AddressSerializer()
+class DoctorSerializer(serializers.HyperlinkedModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name="opd:doctor-detail",  # NOTE: don't forget about the name-space
+        lookup_field="pk",
+    )
 
     class Meta:
         model = Doctor
         fields = [
+            "url",
             "name",
-            "profile_image",
             "speciality",
-            "phone_number",
-            "address",
             "experience",
-            "about",
-            "education",
         ]
+
+
+class DoctorDetailSerializer(serializers.ModelSerializer):
+    address = AddressSerializer()
+
+    class Meta:
+        model = Doctor
+        exclude = [
+            "created_at",
+        ]
+
+    def update(self, instance, validated_data):
+        # handle the address serialization seprately
+        doctor_address = validated_data.pop("address", None)
+        if doctor_address:
+            address_serializer = AddressSerializer(
+                instance.address, data=doctor_address
+            )
+            if address_serializer.is_valid():
+                address_serializer.save()
+
+        profile_image = validated_data.pop("profile_image", None)
+
+        if profile_image is not None:
+            instance.profile_image = profile_image
+
+        # update the other attribute
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance

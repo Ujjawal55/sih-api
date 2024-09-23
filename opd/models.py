@@ -26,14 +26,14 @@ class Doctor(models.Model):
         upload_to="profile/",
         default="profile/default-profile.png",
     )
-    address = models.OneToOneField(
-        Address, on_delete=models.CASCADE, related_name="doctor"
-    )
     speciality = models.CharField("Speciality", max_length=200)
     phone_number = PhoneNumberField("Phone Number", region="IN")
     experience = models.PositiveIntegerField("Year of Experience", default=0)
     about = models.TextField(blank=True)
     education = models.TextField()
+    address = models.OneToOneField(
+        Address, on_delete=models.CASCADE, related_name="doctor"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
