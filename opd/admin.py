@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models import Doctor, Address
+from . import models
 
 # Register your models here.
-admin.site.register(Doctor)
-admin.site.register(Address)
-#
+admin.site.register(models.Doctor)
+admin.site.register(models.Address)
+admin.site.register(models.Opd)
+admin.site.register(models.Inventory)
+admin.site.register(models.Inventory_Items)
