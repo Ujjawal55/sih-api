@@ -72,6 +72,7 @@ class DoctorDetailSerializer(serializers.ModelSerializer):
         model = Doctor
         exclude = [
             "created_at",
+            "user",
         ]
 
     def update(self, instance, validated_data):

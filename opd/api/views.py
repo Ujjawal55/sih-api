@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 
+from opd.api.permissions import CustomAuthentication
+
 
 # # NOTE: this is read_only (get request) portion of the doctors with the function based view
 # @api_view(["GET"])
@@ -109,4 +111,9 @@ def doctor_registration(request):
 
 
 class DoctorDetail(generics.RetrieveUpdateDestroyAPIView):
-    pass
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorDetailSerializer
+    permission_classes = [CustomAuthentication]
+
+    def get_object(self):
+        return Doctor.objects.get(user=self.request.user)

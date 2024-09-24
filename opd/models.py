@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 
 
 class Address(models.Model):
+    # TODO: increase the max_length
     house_number = models.CharField(
         "House Number", max_length=10, null=True, blank=True
     )
@@ -46,6 +47,8 @@ class Doctor(models.Model):
     def delete(self, *args, **kwargs):  # type: ignore
         if self.address:
             self.address.delete()
+        if self.user:
+            self.user.delete()
         super().delete(*args, **kwargs)
 
 
