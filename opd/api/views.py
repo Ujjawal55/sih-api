@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 
-from opd.api.permissions import CustomAuthentication
+from opd.api.permissions import CustomPermission
 
 
 # # NOTE: this is read_only (get request) portion of the doctors with the function based view
@@ -66,13 +66,14 @@ from opd.api.permissions import CustomAuthentication
 
 
 from .serializers import (
+    AppointmentSerializer,
     DoctorSerializer,
     DoctorDetailSerializer,
     InventoryItemSerializer,
     OpdSerializer,
     RegistrationSerializer,
 )
-from opd.models import Doctor, Inventory, InventoryItem, Opd
+from opd.models import Appointment, Doctor, Inventory, InventoryItem, Opd
 
 
 @api_view(["POST"])
@@ -116,7 +117,7 @@ def doctor_registration(request):
 class DoctorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Doctor.objects.all()
     serializer_class = DoctorDetailSerializer
-    permission_classes = [CustomAuthentication]
+    permission_classes = [CustomPermission]
 
     """ 
         get_object() method return the single object for the retrieveupdatedelete class
@@ -138,7 +139,7 @@ class DoctorDetail(generics.RetrieveUpdateDestroyAPIView):
 class OpdDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Opd.objects.all()
     serializer_class = OpdSerializer
-    permission_classes = [CustomAuthentication]
+    permission_classes = [CustomPermission]
 
     def get_object(self):
         doctor = Doctor.objects.get(user=self.request.user)
@@ -169,7 +170,7 @@ class OpdDetail(generics.RetrieveUpdateDestroyAPIView):
 class InventoryItemViewSet(viewsets.ModelViewSet):
     queryset = Inventory.objects.all()
     serializer_class = InventoryItemSerializer
-    permission_classes = [CustomAuthentication]
+    permission_classes = [CustomPermission]
 
     """
     first we have to overwrite the queryset method.
@@ -188,3 +189,20 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         inventory = self.get_inventory()
         serializer.save(inventory=inventory)
+
+
+class AppointmentViewSet(viewsets.ModelViewSet):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+    permission_classes = [CustomPermission]
+
+    def get_doctor(self):
+        return Doctor.objects.get(user=self.request.user)
+
+    def get_queryset(self):  # type: ignore
+        doctor = self.get_doctor()
+        return Appointment.objects.filter(doctor=doctor)
+
+    def perform_create(self, serializer):
+        doctor = self.get_doctor()
+        serializer.save(doctor=doctor)

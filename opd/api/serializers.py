@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.urls import reverse
-from opd.models import Doctor, Address, InventoryItem, Opd
+from opd.models import Appointment, Doctor, Address, InventoryItem, Opd
 from django.contrib.auth.models import User
 
 
@@ -141,3 +141,15 @@ class InventoryItemSerializer(serializers.ModelSerializer):
 
     def get_total_item(self, obj):
         return InventoryItem.objects.count()
+
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "name",
+            "active",
+            "date_time",
+            "last_updated",
+        ]

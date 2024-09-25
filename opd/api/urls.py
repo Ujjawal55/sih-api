@@ -13,7 +13,15 @@ app_name = "opd"
 # NOTE: do not add the trailing ('/') at the end of the router defination
 router = DefaultRouter()
 router.register(
-    "doctor/inventory-item", views.InventoryItemViewSet, basename="inventory-item"
+    "doctor/inventory-item",
+    views.InventoryItemViewSet,
+    basename="inventory-item",
+)
+
+router.register(
+    "doctor/appointment",
+    views.AppointmentViewSet,
+    basename="appointment",
 )
 
 

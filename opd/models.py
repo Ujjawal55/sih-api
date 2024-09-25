@@ -118,5 +118,14 @@ class InventoryItem(models.Model):
             raise ValidationError("Item price cannot be negative")
 
 
-# class Appointment(models.Model):
-#
+class Appointment(models.Model):
+    doctor = models.ForeignKey(
+        Doctor, on_delete=models.CASCADE, related_name="appointments"
+    )
+    name = models.CharField("Name of Patient", max_length=256)
+    date_time = models.DateTimeField("Date of appointment", auto_now_add=True)
+    active = models.BooleanField(default=False)
+    last_updated = models.DateTimeField("Last Updated", auto_now=True)
+
+    def __str__(self):
+        return "Appointment | " + self.name + " | " + self.doctor.name

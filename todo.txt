@@ -1,3 +1,12 @@
 DATE: 25-sep-2024
 
 1. check the invetoryitem view with a item that does not belong to the logged in user
+
+
+DATE: 26-sep--2024
+
+1. implementing the appointment section.
+  -> create the models
+  -> create the serializer
+  -> create the signal with post_save that will increment the no of appointment of the opd when the new appointment is created.
+  -> create the view viewsets with the router to handle the logic

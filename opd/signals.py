@@ -1,10 +1,12 @@
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
-from django.db import transaction
+from django.db import transaction, models
 from django.contrib.auth.models import Group, User
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import status
+from rest_framework.serializers import ValidationError
 
-from opd.models import Address, Doctor, Inventory, Opd
+from opd.models import Address, Appointment, Doctor, Inventory, Opd
 
 
 @receiver(post_save, sender=User)
@@ -67,3 +69,21 @@ def delete_related_object(sender, instance, **kwargs):
 
     except Exception as e:
         print(f"Some error occurs {e}")
+
+
+@receiver(post_save, sender=Appointment)
+def opd_active_patient_increment(sender, created, instance, **kwargs):
+    if created:
+        try:
+            with transaction.atomic():
+                try:
+                    doctor = instance.doctor
+                    opd = Opd.objects.get(doctor_profile=doctor)
+                    opd.active_patient = models.F("no_of_appointment") + 1
+                    opd.save()
+
+                except Doctor.DoesNotExist:
+                    raise ValidationError("Doctor does not exist")
+
+        except Exception as e:
+            print(f"some error occurs {e}")
