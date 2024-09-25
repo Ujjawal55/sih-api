@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from django.http.response import Http404
 from rest_framework import serializers
 from rest_framework import generics
+from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -67,9 +68,11 @@ from opd.api.permissions import CustomAuthentication
 from .serializers import (
     DoctorSerializer,
     DoctorDetailSerializer,
+    InventoryItemSerializer,
+    OpdSerializer,
     RegistrationSerializer,
 )
-from opd.models import Doctor
+from opd.models import Doctor, Inventory, InventoryItem, Opd
 
 
 @api_view(["POST"])
@@ -115,5 +118,73 @@ class DoctorDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DoctorDetailSerializer
     permission_classes = [CustomAuthentication]
 
+    """ 
+        get_object() method return the single object for the retrieveupdatedelete class
+        if we use the get_object() method we can use the url api/doctor/ simply 
+
+        if not then view look for the id in the url name api/doctor/<int:pk>/
+
+
+        other method that are available get_queryset(self) and perform_create(self)
+
+        self contains the request method self.request is accessable.
+
+    """
+
     def get_object(self):
         return Doctor.objects.get(user=self.request.user)
+
+
+class OpdDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Opd.objects.all()
+    serializer_class = OpdSerializer
+    permission_classes = [CustomAuthentication]
+
+    def get_object(self):
+        doctor = Doctor.objects.get(user=self.request.user)
+        return Opd.objects.get(doctor_profile=doctor)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+
+# class InventoryDetail(generics.ListCreateAPIView):
+#     queryset = InventoryItem.objects.all()
+#     serializer_class = InventoryItemSerializer
+#     permission_classes = [CustomAuthentication]
+#
+#     """
+#         here is the usecase of the perform_create method because
+#         we need to set the incoming inventory_item to some inventory which
+#         we have not included
+#     """
+#
+#     def perform_create(self, serializer):
+#         doctor = Doctor.objects.get(user=self.request.user)
+#         opd = Opd.objects.get(doctor_profile=doctor)
+#         inventory = Inventory.objects.get(opd=opd)
+#         serializer.save(inventory=inventory)
+class InventoryItemViewSet(viewsets.ModelViewSet):
+    queryset = Inventory.objects.all()
+    serializer_class = InventoryItemSerializer
+    permission_classes = [CustomAuthentication]
+
+    """
+    first we have to overwrite the queryset method.
+    we only the inventory item of the logged in doctor
+
+    """
+
+    def get_inventory(self):
+        doctor = Doctor.objects.get(user=self.request.user)
+        return Inventory.objects.get(doctor=doctor)
+
+    def get_queryset(self):  # type: ignore
+        inventory = self.get_inventory()
+        return InventoryItem.objects.filter(inventory=inventory)
+
+    def perform_create(self, serializer):
+        inventory = self.get_inventory()
+        serializer.save(inventory=inventory)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from opd.models import Doctor, Address
+from django.urls import reverse
+from opd.models import Doctor, Address, InventoryItem, Opd
 from django.contrib.auth.models import User
 
 
@@ -96,3 +97,47 @@ class DoctorDetailSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class OpdSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opd
+        fields = [
+            "url",
+            "name",
+            "days_of_operation",
+            "max_patient_capacity",
+            "active_patient",
+            "no_of_appointment",
+            "last_updated",
+        ]
+
+    def validate(self, attrs):
+        if "active_patient" in attrs and "max_patient_capacity" in attrs:
+            if attrs["active_patient"] > attrs["max_patient_capacity"]:
+                raise serializers.ValidationError({"error": "No capacity Available"})
+        return attrs
+
+    def get_url(self, obj):
+        # Generate a URL without a lookup field
+        request = self.context.get("request")
+        return reverse("opd:doctor")
+
+
+class InventoryItemSerializer(serializers.ModelSerializer):
+    total_item = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = InventoryItem
+        fields = [
+            "item_name",
+            "item_quantity",
+            "item_price",
+            "last_updated",
+            "total_item",
+        ]
+
+    def get_total_item(self, obj):
+        return InventoryItem.objects.count()

@@ -1,5 +1,6 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
+from django.db import transaction
 from django.contrib.auth.models import Group, User
 from rest_framework.authtoken.models import Token
 
@@ -45,7 +46,24 @@ def create_opd_object(sender, created, instance, **kwargs):
         )
 
 
-@receiver(post_save, sender=Opd)
+@receiver(post_save, sender=Doctor)
 def create_opd_inventory(sender, created, instance, **kwargs):
     if created:
-        Inventory.objects.create(opd=instance)
+        Inventory.objects.create(doctor=instance)
+
+
+@receiver(pre_delete, sender=User)
+def delete_related_object(sender, instance, **kwargs):
+    try:
+        with transaction.atomic():
+            try:
+                doctor = instance.doctor
+                if doctor.address:
+                    doctor.address.delete()
+                doctor.delete()
+
+            except AttributeError:
+                print("Doctor does not exist")
+
+    except Exception as e:
+        print(f"Some error occurs {e}")

@@ -6,9 +6,8 @@ from django.core.exceptions import ValidationError
 
 
 class Address(models.Model):
-    # TODO: increase the max_length
     house_number = models.CharField(
-        "House Number", max_length=10, null=True, blank=True
+        "House Number", max_length=60, null=True, blank=True
     )
     street_name = models.CharField("Street Name", max_length=200)
     city = models.CharField("City Name", max_length=200)
@@ -43,13 +42,6 @@ class Doctor(models.Model):
 
     def __str__(self):
         return "Dr. " + self.name
-
-    def delete(self, *args, **kwargs):  # type: ignore
-        if self.address:
-            self.address.delete()
-        if self.user:
-            self.user.delete()
-        super().delete(*args, **kwargs)
 
 
 class Opd(models.Model):
@@ -89,7 +81,7 @@ class Opd(models.Model):
 
     def clean_active_patient(self):
         if self.active_patient > self.max_patient_capacity:
-            raise ValidationError("There is no bed available for the patient")
+            raise ValidationError("No beds are available")
 
     def clean(self):
         super().clean()
@@ -97,27 +89,34 @@ class Opd(models.Model):
 
 
 class Inventory(models.Model):
-    opd = models.OneToOneField(Opd, on_delete=models.CASCADE, related_name="inventory")
+    doctor = models.OneToOneField(
+        Doctor, on_delete=models.CASCADE, related_name="inventory"
+    )
 
     def __str__(self):
         if hasattr(self, "opd"):
-            return "Inventory of Dr." + self.opd.doctor_profile.name
+            return "Inventory of Dr." + self.doctor.name
         return "Inventory"
 
 
-class Inventory_Items(models.Model):
+class InventoryItem(models.Model):
     inventory = models.ForeignKey(
         Inventory, on_delete=models.CASCADE, related_name="inventory_items"
     )
     item_name = models.CharField("Name of Item", max_length=255)
     item_quantity = models.PositiveIntegerField("Quantity of Item", default=0)
+    # TODO: add the decimal points
     item_price = models.FloatField("Price of Item", default=0)
     last_updated = models.DateTimeField(auto_now=True)
     created_id = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return "Inventory of " + self.inventory.opd.doctor_profile.name
+        return "Inventory of " + self.inventory.doctor.name + " | " + self.item_name
 
     def clean_item_price(self):
         if self.item_price < 0:
             raise ValidationError("Item price cannot be negative")
+
+
+# class Appointment(models.Model):
+#

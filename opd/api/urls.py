@@ -1,5 +1,7 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 from . import views
+
 
 app_name = "opd"
 
@@ -8,6 +10,11 @@ app_name = "opd"
 #     path("doctors/<int:pk>/", views.DoctorDetail.as_view(), name="doctor-detail"),
 # ]
 #
+# NOTE: do not add the trailing ('/') at the end of the router defination
+router = DefaultRouter()
+router.register(
+    "doctor/inventory-item", views.InventoryItemViewSet, basename="inventory-item"
+)
 
 
 urlpatterns = [
@@ -15,4 +22,8 @@ urlpatterns = [
     path("logout/", views.doctor_logout, name="logout"),
     path("register/", views.doctor_registration, name="register"),
     path("doctor/", views.DoctorDetail.as_view(), name="doctor"),
+    path("doctor/opd/", views.OpdDetail.as_view(), name="opd"),
 ]
+
+
+urlpatterns += router.urls

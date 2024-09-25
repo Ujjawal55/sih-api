@@ -1,0 +1,3 @@
+DATE: 25-sep-2024
+
+1. check the invetoryitem view with a item that does not belong to the logged in user
