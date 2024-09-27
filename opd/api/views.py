@@ -71,9 +71,10 @@ from .serializers import (
     DoctorDetailSerializer,
     InventoryItemSerializer,
     OpdSerializer,
+    PatientSerializer,
     RegistrationSerializer,
 )
-from opd.models import Appointment, Doctor, Inventory, InventoryItem, Opd
+from opd.models import Appointment, Doctor, Inventory, InventoryItem, Opd, Patient
 
 
 @api_view(["POST"])
@@ -190,6 +191,11 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
         inventory = self.get_inventory()
         serializer.save(inventory=inventory)
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["inventory"] = self.get_inventory()
+        return context
+
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
@@ -202,6 +208,23 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):  # type: ignore
         doctor = self.get_doctor()
         return Appointment.objects.filter(doctor=doctor)
+
+    def perform_create(self, serializer):
+        doctor = self.get_doctor()
+        serializer.save(doctor=doctor)
+
+
+class PatientViewSet(viewsets.ModelViewSet):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer()
+    permission_classes = [CustomPermission]
+
+    def get_doctor(self):
+        return Doctor.objects.get(user=self.request.user)
+
+    def get_queryset(self):  # type: ignore
+        doctor = self.get_doctor()
+        return Patient.objects.filter(doctor=doctor)
 
     def perform_create(self, serializer):
         doctor = self.get_doctor()

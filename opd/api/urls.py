@@ -24,6 +24,11 @@ router.register(
     basename="appointment",
 )
 
+router.register(
+    "doctor/patient",
+    views.PatientViewSet,
+    basename="patient",
+)
 
 urlpatterns = [
     path("login/", views.doctor_login, name="login"),

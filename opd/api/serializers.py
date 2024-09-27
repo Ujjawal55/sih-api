@@ -1,6 +1,15 @@
+from django.utils import timezone
 from rest_framework import serializers
 from django.urls import reverse
-from opd.models import Appointment, Doctor, Address, InventoryItem, Opd
+from opd.models import (
+    Appointment,
+    Doctor,
+    Address,
+    InventoryItem,
+    MedicalData,
+    Opd,
+    Patient,
+)
 from django.contrib.auth.models import User
 
 
@@ -140,7 +149,10 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_item(self, obj):
-        return InventoryItem.objects.count()
+        inventory = self.context["inventory"]
+        return InventoryItem.objects.filter(inventory=inventory)
+
+    read_only_fields = ["last_updated", "total_item"]
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -153,3 +165,81 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "date_time",
             "last_updated",
         ]
+
+        read_only_fields = ["id", "date_time", "last_upated"]
+
+
+class MedicalDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalData
+        fields = [
+            "id",
+            "blood_group",
+            "height",
+            "weight",
+            "medical_history",
+        ]
+
+        read_only = ["id"]
+
+
+class PatientSerializer(serializers.ModelSerializer):
+    address = AddressSerializer()
+    medical_data = MedicalDataSerializer()
+
+    class Meta:
+        model = Patient
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "date_of_birth",
+            "gender",
+            "contact",
+            "email",
+            "address",
+            "medical_data",
+        ]
+
+        read_only_fields = ["id"]
+
+        def create(self, validated_data):
+            address = validated_data.pop("address")
+            medical_data = validated_data.pop("medical_data")
+
+            address = Address.objects.create(**address)
+            medical_data = MedicalData.objects.create(**medical_data)
+
+            patient = Patient.objects.create(
+                address=address,
+                medical_data=medical_data,
+                **validated_data,
+            )
+
+            return patient
+
+        def update(self, instance, validated_data):
+            address = validated_data.pop("address", None)
+            medical_data = validated_data.pop("medical_data", None)
+
+            if address:
+                serializer = AddressSerializer(
+                    instance.address, data=address, partial=True
+                )
+                if serializer.is_valid():
+                    serializer.save()
+
+            if medical_data:
+                serializer = MedicalDataSerializer(
+                    instance.medical_data, data=medical_data, partial=True
+                )
+                if serializer.is_valid():
+                    serializer.save()
+
+            return super().update(instance, validated_data)  # type: ignore
+
+        def validate_date_of_birth(self, value):
+            if value > timezone.now().date():  # type: ignore
+                raise serializers.ValidationError("date of birth cannot be in future")
+
+            return value

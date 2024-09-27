@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import status
 from rest_framework.serializers import ValidationError
 
-from opd.models import Address, Appointment, Doctor, Inventory, Opd
+from opd.models import Address, Appointment, Doctor, Inventory, Opd, Patient
 
 
 @receiver(post_save, sender=User)
@@ -72,14 +72,14 @@ def delete_related_object(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=Appointment)
-def opd_active_patient_increment(sender, created, instance, **kwargs):
+def opd_appointment_increment(sender, created, instance, **kwargs):
     if created:
         try:
             with transaction.atomic():
                 try:
                     doctor = instance.doctor
                     opd = Opd.objects.get(doctor_profile=doctor)
-                    opd.active_patient = models.F("no_of_appointment") + 1
+                    opd.no_of_appointment = models.F("no_of_appointment") + 1
                     opd.save()
 
                 except Doctor.DoesNotExist:
@@ -87,3 +87,55 @@ def opd_active_patient_increment(sender, created, instance, **kwargs):
 
         except Exception as e:
             print(f"some error occurs {e}")
+
+
+@receiver(post_delete, sender=Appointment)
+def opd_appointment_decrement(sender, instance, **kwargs):
+    try:
+        with transaction.atomic():
+            try:
+                doctor = instance.doctor
+                opd = Opd.objects.get(doctor_profile=doctor)
+                opd.no_of_appointment = models.F("no_of_appointment") - 1
+                opd.save()
+
+            except Doctor.DoesNotExist:
+                raise ValidationError("Doctor does not exist")
+
+    except Exception as e:
+        print(f"some error occurs {e}")
+
+
+@receiver(post_save, sender=Patient)
+def opd_active_patient_increment(sender, created, instance, **kwargs):
+    if created:
+        try:
+            with transaction.atomic():
+                try:
+                    doctor = instance.doctor
+                    opd = Opd.objects.get(doctor_profile=doctor)
+                    opd.active_patient = models.F("active_patient") + 1
+                    opd.save()
+
+                except Doctor.DoesNotExist:
+                    raise ValidationError("Doctor does not exist")
+
+        except Exception as e:
+            print(f"some error occurs {e}")
+
+
+@receiver(post_delete, sender=Patient)
+def opd_active_patient_decrement(sender, instance, **kwargs):
+    try:
+        with transaction.atomic():
+            try:
+                doctor = instance.doctor
+                opd = Opd.objects.get(doctor_profile=doctor)
+                opd.active_patient = models.F("active_patient") - 1
+                opd.save()
+
+            except Doctor.DoesNotExist:
+                raise ValidationError("Doctor does not exist")
+
+    except Exception as e:
+        print(f"some error occurs {e}")

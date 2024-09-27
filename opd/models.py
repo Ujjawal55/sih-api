@@ -129,3 +129,56 @@ class Appointment(models.Model):
 
     def __str__(self):
         return "Appointment | " + self.name + " | " + self.doctor.name
+
+
+class MedicalData(models.Model):
+    BLOOD_TYPE = [
+        ("A+", "A+"),
+        ("A-", "A-"),
+        ("B+", "B+"),
+        ("B-", "B-"),
+        ("AB+", "AB+"),
+        ("AB-", "AB-"),
+        ("O+", "O+"),
+        ("O-", "O-"),
+    ]
+    blood_group = models.CharField("Blood Type", max_length=6, choices=BLOOD_TYPE)
+    height = models.CharField("Height", max_length=10)
+    weight = models.CharField("Weight", max_length=10)
+    medical_history = models.TextField("Medical History")
+
+    def __str__(self):
+        if hasattr(self, "patient") and self.patient:  # type: ignore
+            return "Medical-Data | " + self.patient.first_name  # type: ignore
+
+        return "Medical-Date"
+
+
+class Patient(models.Model):
+    GENDER_CHOICES = [
+        ("male", "male"),
+        ("female", "female"),
+        ("other", "other"),
+    ]
+    doctor = models.ForeignKey(
+        Doctor, on_delete=models.CASCADE, related_name="patients"
+    )
+    medical_data = models.OneToOneField(
+        MedicalData, on_delete=models.SET_NULL, null=True, related_name="patient"
+    )
+
+    address = models.OneToOneField(
+        Address, on_delete=models.SET_NULL, null=True, related_name="patient"
+    )
+
+    first_name = models.CharField("First Name", max_length=100)
+    last_name = models.CharField("Last Name", max_length=100)
+    date_of_birth = models.DateField("Date of Birth")
+    gender = models.CharField("Gender", max_length=6, choices=GENDER_CHOICES)
+    contact = PhoneNumberField("Contact", region="IN")
+    email = models.EmailField("Email")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.first_name + " | " + self.doctor.name
